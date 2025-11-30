@@ -28,18 +28,18 @@
         top: 50px;
         left: 20px;
         height: 500px;
-        width: 150px;
+        width: 170px;
         display: flex;
         gap: 10px;
         z-index: 200;
     }
 
     #rank-bar-container {
-        width: 20px;
+        width: 25px;
         height: 500px;
         background: #2a0038;
         border: 2px solid #ff9dff;
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
         position: relative;
     }
@@ -60,9 +60,21 @@
         height: 500px;
         font-size: 16px;
         padding-left: 5px;
-        text-shadow: 0 0 8px #ff7cff;
     }
 
+    .rank {
+        opacity: 0.3;
+        filter: brightness(0.5);
+        transition: all 0.5s;
+    }
+
+    .rank.active {
+        opacity: 1;
+        filter: brightness(1.8);
+        text-shadow: 0 0 10px #ff8dff;
+    }
+
+    /* Battlefield */
     #battlefield {
         margin-top: 40px;
         display: flex;
@@ -163,63 +175,56 @@
 
     button:hover { background: #ff2eff; }
 
-    /* Spell projectile */
+    /* === Bigger, Brighter Spell Projectile === */
     .spell {
         position: absolute;
-        width: 40px;
-        height: 40px;
-        background: radial-gradient(circle, #ff88ff, #c200ff);
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
-        box-shadow: 0 0 25px #ff44ff;
+        background: radial-gradient(circle, #ffffff, #ff66ff, #b200d6);
+        box-shadow: 0 0 40px #ff44ff, 0 0 80px #ff00ff;
         pointer-events: none;
-        animation: spellFly 0.5s linear forwards;
+        animation: spellFly 0.7s linear forwards;
+    }
+
+    /* Monster’s spell is blue */
+    .spell.monster {
+        background: radial-gradient(circle, #ffffff, #66ccff, #0066ff);
+        box-shadow: 0 0 40px #55aaff, 0 0 80px #0088ff;
+    }
+
+    /* Glowing tail */
+    .spell::after {
+        content: "";
+        position: absolute;
+        width: 20px;
+        height: 80px;
+        background: rgba(255, 0, 255, 0.4);
+        filter: blur(10px);
+        left: 20px;
+        top: -40px;
+        transform: rotate(180deg);
     }
 
     @keyframes spellFly {
-        from { transform: scale(0.6); opacity: 1; }
-        to { transform: scale(1.2); opacity: 0; }
+        from { transform: scale(1); opacity: 1; }
+        to { transform: scale(1.8); opacity: 0; }
     }
 
-    .spell.monster {
-        background: radial-gradient(circle, #66ccff, #0066ff);
-        box-shadow: 0 0 25px #33aaff;
-    }
-
-    .blast {
+    /* Impact flash on hit */
+    .impact {
         position: absolute;
-        width: 150px;
-        height: 150px;
-        background: url('https://i.imgur.com/uP0R0yG.png') center/cover;
-        animation: blastAnim 0.6s forwards;
+        width: 140px;
+        height: 140px;
+        background: radial-gradient(circle, white, rgba(255,0,255,0.3), transparent);
+        border-radius: 50%;
         pointer-events: none;
+        animation: impactFlash 0.4s forwards;
     }
 
-    @keyframes blastAnim {
-        from { transform: scale(0.3); opacity: 1; }
-        to { transform: scale(1.5); opacity: 0; }
-    }
-
-    .explode {
-        position: absolute;
-        width: 200px;
-        height: 200px;
-        background: url('https://i.imgur.com/EYlS7rG.png') center/cover;
-        animation: explodeAnim 0.8s forwards;
-    }
-
-    @keyframes explodeAnim {
-        from { opacity: 1; transform: scale(0.8); }
-        to { opacity: 0; transform: scale(1.6); }
-    }
-
-    #hero.hit {
-        animation: flashRed 0.4s;
-    }
-
-    @keyframes flashRed {
-        0% { filter: brightness(1); }
-        50% { filter: brightness(3) saturate(2); }
-        100% { filter: brightness(1); }
+    @keyframes impactFlash {
+        from { opacity: 1; transform: scale(0.5); }
+        to { opacity: 0; transform: scale(2); }
     }
 </style>
 </head>
@@ -228,19 +233,19 @@
 
 <h1>⚔️ Multiplication RPG: Arcane Tower ⚔️</h1>
 
-<!-- === RANK BAR UI === -->
+<!-- === RANK BAR === -->
 <div id="rank-panel">
     <div id="rank-bar-container">
         <div id="rank-fill"></div>
     </div>
 
     <div id="rank-labels">
-        <div>Grandmaster ✨</div>
-        <div>Archmage 🔮</div>
-        <div>Mage ⚡</div>
-        <div>Adept 📘</div>
-        <div>Apprentice 🌀</div>
-        <div>Novice ⚔️</div>
+        <div class="rank" id="rank6">Grandmaster ✨</div>
+        <div class="rank" id="rank5">Archmage 🔮</div>
+        <div class="rank" id="rank4">Mage ⚡</div>
+        <div class="rank" id="rank3">Adept 📘</div>
+        <div class="rank" id="rank2">Apprentice 🌀</div>
+        <div class="rank" id="rank1">Novice ⚔️</div>
     </div>
 </div>
 
@@ -278,6 +283,15 @@ let monstersDefeated = 0;
 let heroHP = 100;
 let monsterHP = 60;
 
+const ranks = [
+    "Novice",
+    "Apprentice",
+    "Adept",
+    "Mage",
+    "Archmage",
+    "Grandmaster"
+];
+
 // === Generate 30 questions ===
 for (let i = 0; i < 30; i++) {
     let a = Math.ceil(Math.random() * 11);
@@ -288,6 +302,14 @@ for (let i = 0; i < 30; i++) {
 function updateRankBar() {
     let progress = (score / 30) * 100;
     document.getElementById("rank-fill").style.height = progress + "%";
+
+    let level = Math.ceil((score / 30) * 6);
+
+    for (let i = 1; i <= 6; i++) {
+        const label = document.getElementById("rank" + i);
+        if (i <= level) label.classList.add("active");
+        else label.classList.remove("active");
+    }
 }
 
 function showQuestion() {
@@ -301,7 +323,7 @@ function showQuestion() {
         `Question ${current + 1}/30:<br>${q.a} × ${q.b} = ?`;
 }
 
-// === Magic projectile ===
+// === Spell System ===
 function castSpell(fromId, toId, isMonster = false) {
     let from = document.getElementById(fromId);
     let to = document.getElementById(toId);
@@ -313,8 +335,8 @@ function castSpell(fromId, toId, isMonster = false) {
     spell.className = "spell";
     if (isMonster) spell.classList.add("monster");
 
-    spell.style.left = (rect1.left + rect1.width/2 - 20) + "px";
-    spell.style.top = (rect1.top + rect1.height/2 - 20) + "px";
+    spell.style.left = (rect1.left + rect1.width/2 - 30) + "px";
+    spell.style.top = (rect1.top + rect1.height/2 - 30) + "px";
 
     let dx = (rect2.left + rect2.width/2) - (rect1.left + rect1.width/2);
     let dy = (rect2.top + rect2.height/2) - (rect1.top + rect1.height/2);
@@ -324,24 +346,22 @@ function castSpell(fromId, toId, isMonster = false) {
             { transform: `translate(0px,0px)` },
             { transform: `translate(${dx}px, ${dy}px)` }
         ],
-        { duration: 500, easing: "linear" }
+        { duration: 700, easing: "ease-out" }
     );
 
     document.body.appendChild(spell);
-    setTimeout(() => spell.remove(), 500);
-}
 
-function magicBlast(targetId) {
-    let target = document.getElementById(targetId);
-    let blast = document.createElement("div");
-    blast.className = "blast";
+    setTimeout(() => {
+        spell.remove();
 
-    let rect = target.getBoundingClientRect();
-    blast.style.left = (rect.left + rect.width/2 - 75) + "px";
-    blast.style.top = (rect.top + rect.height/2 - 75) + "px";
-
-    document.body.appendChild(blast);
-    setTimeout(() => blast.remove(), 600);
+        // Impact flash
+        let flash = document.createElement("div");
+        flash.className = "impact";
+        flash.style.left = (rect2.left + rect2.width/2 - 70) + "px";
+        flash.style.top = (rect2.top + rect2.height/2 - 70) + "px";
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 400);
+    }, 700);
 }
 
 function explodeMonster() {
@@ -375,7 +395,6 @@ function submitAnswer() {
         score++;
         streak++;
 
-        // Update rank bar
         updateRankBar();
 
         let dmg = 10 + (streak * 5);
@@ -384,7 +403,6 @@ function submitAnswer() {
         monsterHP -= dmg;
 
         castSpell("hero", "monster");
-        magicBlast("monster");
 
         document.getElementById("log").innerHTML =
             `✨ Correct! You dealt <strong>${dmg}</strong> damage!`;
@@ -396,11 +414,12 @@ function submitAnswer() {
             document.getElementById("log").innerHTML +=
                 `<br>💥 You defeated the monster!`;
 
-            setTimeout(spawnMonster, 600);
+            setTimeout(spawnMonster, 700);
         }
 
     } else {
         castSpell("monster", "hero", true);
+
         streak = 0;
         heroHP -= 10;
 
@@ -412,10 +431,6 @@ function submitAnswer() {
     }
 
     document.getElementById("streak-indicator").innerHTML = `Streak: ${streak}`;
-    document.getElementById("streak-indicator").style.transform = "scale(1.3)";
-    setTimeout(() => {
-        document.getElementById("streak-indicator").style.transform = "scale(1)";
-    }, 150);
 
     document.getElementById("hero-hp").style.width = heroHP + "%";
     document.getElementById("monster-hp").style.width = monsterHP + "%";
@@ -430,14 +445,15 @@ document.getElementById("answer").addEventListener("keydown", function(e) {
 });
 
 function endGame() {
+    let pct = score / 30;
+    let rankIndex = Math.max(0, Math.min(5, Math.floor(pct * 6)));
+    let finalRank = ranks[rankIndex];
+
     let finalMsg = `
         <p>You Defeated <strong>${monstersDefeated}</strong> monsters!</p>
         <p>Your Score: <strong>${score}/30</strong></p>
+        <p>Your Final Rank: <strong>${finalRank}</strong> 🏆</p>
     `;
-
-    if (score === 30) {
-        finalMsg += `<p>🌟 PERFECT! You reached <strong>GRANDMASTER</strong> rank! 🌟</p>`;
-    }
 
     document.getElementById("results").innerHTML = finalMsg +
         `<button onclick="location.reload()">Play Again</button>`;
