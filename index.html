@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -74,6 +74,7 @@
         text-shadow: 0 0 10px #ff8dff;
     }
 
+    /* Battlefield */
     #battlefield {
         margin-top: 40px;
         display: flex;
@@ -172,6 +173,7 @@
 
     button:hover { background: #ff2eff; }
 
+    /* === PARTICLES === */
     .particle {
         position: absolute;
         width: 10px;
@@ -186,6 +188,7 @@
         to { transform: scale(0.1); opacity: 0; }
     }
 
+    /* === SHOCKWAVE === */
     .impact {
         position: absolute;
         width: 140px;
@@ -207,15 +210,20 @@
 
 <h1>⚔️ Multiplication RPG: Arcane Tower ⚔️</h1>
 
-<!-- === SOUND EFFECTS (REAL MP3 FILES) === -->
-<audio id="sfx-correct" src="https://cdn.pixabay.com/audio/2022/03/15/audio_8d39aa25b2.mp3"></audio>
-<audio id="sfx-wrong" src="https://cdn.pixabay.com/audio/2022/03/10/audio_f579249e97.mp3"></audio>
-<audio id="sfx-hero-cast" src="https://cdn.pixabay.com/audio/2022/03/15/audio_5fedac2ff1.mp3"></audio>
-<audio id="sfx-monster-cast" src="https://cdn.pixabay.com/audio/2022/03/10/audio_cdb54c0163.mp3"></audio>
-<audio id="sfx-impact" src="https://cdn.pixabay.com/audio/2022/03/10/audio_8ec1d24de2.mp3"></audio>
-<audio id="sfx-levelup" src="https://cdn.pixabay.com/audio/2022/03/10/audio_68f96adab3.mp3"></audio>
+<!-- === SOUND EFFECTS (jsDelivr — working) === -->
+<audio id="sfx-correct" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/collect.mp3"></audio>
+<audio id="sfx-wrong" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/error.mp3"></audio>
+<audio id="sfx-hero-cast" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/whoosh.mp3"></audio>
+<audio id="sfx-monster-cast" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/whoosh.mp3"></audio>
+<audio id="sfx-impact" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/explosion.mp3"></audio>
+<audio id="sfx-levelup" src="https://cdn.jsdelivr.net/gh/jshawl/sfx/powerup.mp3"></audio>
 
-<!-- === RANK BAR === -->
+<!-- === BUTTON TO UNLOCK AUDIO ON CHROME === -->
+<button id="unlockAudio"
+ style="position:fixed;top:20px;right:20px;font-size:20px;z-index:9999;">
+🔊 Enable Sound
+</button>
+
 <div id="rank-panel">
     <div id="rank-bar-container">
         <div id="rank-fill"></div>
@@ -255,12 +263,31 @@
 <div id="results"></div>
 
 <script>
-/* === SOUND FUNCTION === */
+let audioUnlocked = false;
+
+function unlockAllAudio() {
+    if (audioUnlocked) return;
+
+    const sounds = document.querySelectorAll("audio");
+    sounds.forEach(a => {
+        a.play().then(() => {
+            a.pause();
+            a.currentTime = 0;
+        }).catch(() => {});
+    });
+
+    audioUnlocked = true;
+    document.getElementById("unlockAudio").style.display = "none";
+}
+
+document.getElementById("unlockAudio").addEventListener("click", unlockAllAudio);
+
 function playSound(id) {
-    const s = document.getElementById(id);
-    if (!s) return;
-    s.currentTime = 0;
-    s.play();
+    if (!audioUnlocked) return;
+    const a = document.getElementById(id);
+    if (!a) return;
+    a.currentTime = 0;
+    a.play();
 }
 
 /* GAME VARIABLES */
@@ -284,7 +311,6 @@ function updateRankBar() {
     document.getElementById("rank-fill").style.height = progress + "%";
 
     let level = 1;
-
     if (score === 30) level = 6;
     else if (score >= 25) level = 5;
     else if (score >= 20) level = 4;
@@ -293,7 +319,6 @@ function updateRankBar() {
 
     for (let i = 1; i <= 6; i++) {
         let label = document.getElementById("rank" + i);
-
         if (i <= level) {
             if (!label.classList.contains("active")) playSound("sfx-levelup");
             label.classList.add("active");
@@ -303,10 +328,10 @@ function updateRankBar() {
     }
 }
 
+/* SPELL STYLE */
 function randomSpellStyle(isMonster) {
     const styles = ["arcane", "fire", "lightning", "chaos"];
     let type = styles[Math.floor(Math.random() * styles.length)];
-
     let spell = document.createElement("div");
     spell.style.position = "absolute";
     spell.style.width = "55px";
@@ -314,41 +339,26 @@ function randomSpellStyle(isMonster) {
     spell.style.borderRadius = "50%";
     spell.style.pointerEvents = "none";
 
-    if (type === "arcane") {
-        spell.style.background = "radial-gradient(circle, white, #ff99ff, #9900cc)";
-        spell.style.boxShadow = "0 0 25px #ff66ff, 0 0 50px #cc00ff";
-    }
-    if (type === "fire") {
-        spell.style.background = "radial-gradient(circle, white, #ff9900, #cc0000)";
-        spell.style.boxShadow = "0 0 25px #ff3300, 0 0 70px #ff6600";
-    }
-    if (type === "lightning") {
-        spell.style.background = "radial-gradient(circle, white, #99ccff, #0044ff)";
-        spell.style.boxShadow = "0 0 25px #66aaff, 0 0 80px #0088ff";
-    }
-    if (type === "chaos") {
-        spell.style.background = "radial-gradient(circle, white, #ff00ff, #00ffff, #ff3300)";
-        spell.style.boxShadow = "0 0 50px #ff55ff, 0 0 80px #00ffff";
-    }
+    if (type === "arcane") spell.style.background = "radial-gradient(circle, white, #ff99ff, #9900cc)";
+    if (type === "fire") spell.style.background = "radial-gradient(circle, white, #ff9900, #cc0000)";
+    if (type === "lightning") spell.style.background = "radial-gradient(circle, white, #99ccff, #0044ff)";
+    if (type === "chaos") spell.style.background = "radial-gradient(circle, white, #ff00ff, #00ffff, #ff3300)";
 
-    if (isMonster) {
-        spell.style.background = "radial-gradient(circle, white, #66ccff, #0044ff)";
-    }
+    if (isMonster) spell.style.background = "radial-gradient(circle, white, #66ccff, #0044ff)";
+
+    spell.style.boxShadow = "0 0 25px #ff66ff, 0 0 50px #cc00ff";
 
     return spell;
 }
 
-function castSpell(fromId, toId, isMonster = false) {
-
+function castSpell(fromId, toId, isMonster=false) {
     if (isMonster) playSound("sfx-monster-cast");
     else playSound("sfx-hero-cast");
 
     let from = document.getElementById(fromId);
     let to = document.getElementById(toId);
-
     let rect1 = from.getBoundingClientRect();
     let rect2 = to.getBoundingClientRect();
-
     let spell = randomSpellStyle(isMonster);
 
     spell.style.left = rect1.left + rect1.width/2 - 25 + "px";
@@ -369,13 +379,7 @@ function castSpell(fromId, toId, isMonster = false) {
     let dx = rect2.left + rect2.width/2 - (rect1.left + rect1.width/2);
     let dy = rect2.top + rect2.height/2 - (rect1.top + rect1.height/2);
 
-    spell.animate(
-        [
-            { transform: "translate(0,0)" },
-            { transform: `translate(${dx}px, ${dy}px)` }
-        ],
-        { duration: 700, easing: "ease-out" }
-    );
+    spell.animate([{ transform: "translate(0,0)" }, { transform: `translate(${dx}px,${dy}px)` }], { duration:700, easing:"ease-out" });
 
     setTimeout(() => {
         clearInterval(particles);
@@ -385,24 +389,18 @@ function castSpell(fromId, toId, isMonster = false) {
         impact.className = "impact";
         impact.style.left = rect2.left + rect2.width/2 - 70 + "px";
         impact.style.top = rect2.top + rect2.height/2 - 70 + "px";
-
         document.body.appendChild(impact);
 
         playSound("sfx-impact");
 
         setTimeout(() => impact.remove(), 400);
-    }, 700);
+    },700);
 }
 
 function showQuestion() {
-    if (current >= 30 || heroHP <= 0) {
-        endGame();
-        return;
-    }
-
+    if (current >= 30 || heroHP <=0) return endGame();
     let q = questions[current];
-    document.getElementById("question-box").innerHTML =
-        `Question ${current + 1}/30:<br>${q.a} × ${q.b} = ?`;
+    document.getElementById("question-box").innerHTML = `Question ${current+1}/30:<br>${q.a} × ${q.b} = ?`;
 }
 
 function spawnMonster() {
@@ -420,45 +418,33 @@ function submitAnswer() {
     let correct = q.a * q.b;
 
     if (userAnswer === correct) {
-
         playSound("sfx-correct");
-
         score++;
         streak++;
-
         updateRankBar();
 
-        let dmg = 10 + streak * 5;
-        if (dmg > 25) dmg = 25;
+        let dmg = 10 + streak*5; if (dmg>25) dmg=25;
         monsterHP -= dmg;
 
-        castSpell("hero", "monster");
+        castSpell("hero","monster");
+        document.getElementById("log").innerHTML = `✨ Correct! You dealt <strong>${dmg}</strong> damage!`;
 
-        document.getElementById("log").innerHTML = 
-            `✨ Correct! You dealt <strong>${dmg}</strong> damage!`;
-
-        if (monsterHP <= 0) {
+        if (monsterHP <=0) {
             monstersDefeated++;
             document.getElementById("log").innerHTML += "<br>💥 Monster defeated!";
-            setTimeout(spawnMonster, 700);
+            setTimeout(spawnMonster,700);
         }
 
     } else {
-
         playSound("sfx-wrong");
-
-        streak = 0;
-        heroHP -= 10;
-
-        castSpell("monster", "hero", true);
-
-        document.getElementById("log").innerHTML =
-            `❌ Wrong! ${q.a} × ${q.b} = <strong>${correct}</strong>`;
+        streak=0;
+        heroHP -=10;
+        castSpell("monster","hero",true);
+        document.getElementById("log").innerHTML = `❌ Wrong! ${q.a} × ${q.b} = <strong>${correct}</strong>`;
     }
 
     document.getElementById("hero-hp").style.width = heroHP + "%";
     document.getElementById("monster-hp").style.width = monsterHP + "%";
-
     document.getElementById("streak-indicator").innerHTML = `Streak: ${streak}`;
 
     input.value = "";
@@ -466,19 +452,16 @@ function submitAnswer() {
     showQuestion();
 }
 
-document.getElementById("answer").addEventListener("keydown", e => {
-    if (e.key === "Enter") submitAnswer();
-});
+document.getElementById("answer").addEventListener("keydown", e=>{ if(e.key==="Enter") submitAnswer(); });
 
 function endGame() {
-    let finalRank = "";
-
-    if (score === 30) finalRank = "Grandmaster";
-    else if (score >= 25) finalRank = "Archmage";
-    else if (score >= 20) finalRank = "Mage";
-    else if (score >= 15) finalRank = "Adept";
-    else if (score >= 10) finalRank = "Apprentice";
-    else finalRank = "Novice";
+    let finalRank="";
+    if(score===30) finalRank="Grandmaster";
+    else if(score>=25) finalRank="Archmage";
+    else if(score>=20) finalRank="Mage";
+    else if(score>=15) finalRank="Adept";
+    else if(score>=10) finalRank="Apprentice";
+    else finalRank="Novice";
 
     document.getElementById("results").innerHTML = `
         <p>You defeated <strong>${monstersDefeated}</strong> monsters!</p>
@@ -490,6 +473,7 @@ function endGame() {
 
 showQuestion();
 updateRankBar();
+spawnMonster();
 </script>
 
 </body>
