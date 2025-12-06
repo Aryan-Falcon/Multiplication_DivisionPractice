@@ -308,7 +308,6 @@ function updateRankBar() {
     }
 }
 
-/* === SPELL STYLE GENERATOR === */
 function randomSpellStyle(isMonster) {
     const styles = ["arcane", "fire", "lightning", "chaos"];
     let type = styles[Math.floor(Math.random() * styles.length)];
@@ -345,8 +344,6 @@ function randomSpellStyle(isMonster) {
 }
 
 function castSpell(fromId, toId, isMonster = false) {
-
-    // 🔊 CAST SOUND
     if (isMonster) playSound("sfx-monster-cast");
     else playSound("sfx-hero-cast");
 
@@ -388,15 +385,12 @@ function castSpell(fromId, toId, isMonster = false) {
         clearInterval(particles);
         spell.remove();
 
-        // Impact
         let impact = document.createElement("div");
         impact.className = "impact";
         impact.style.left = rect2.left + rect2.width/2 - 70 + "px";
         impact.style.top = rect2.top + rect2.height/2 - 70 + "px";
 
         document.body.appendChild(impact);
-
-        // 🔊 IMPACT SOUND
         playSound("sfx-impact");
 
         setTimeout(() => impact.remove(), 400);
@@ -430,7 +424,6 @@ function submitAnswer() {
 
     if (userAnswer === correct) {
 
-        // 🔊 CORRECT SOUND
         playSound("sfx-correct");
 
         score++;
@@ -444,7 +437,8 @@ function submitAnswer() {
 
         castSpell("hero", "monster");
 
-        document.getElementById("log").innerHTML = `✨ Correct! You dealt <strong>${dmg}</strong> damage!`;
+        document.getElementById("log").innerHTML =
+            `✨ Correct! You dealt <strong>${dmg}</strong> damage!`;
 
         if (monsterHP <= 0) {
             monstersDefeated++;
@@ -454,7 +448,6 @@ function submitAnswer() {
 
     } else {
 
-        // 🔊 WRONG SOUND
         playSound("sfx-wrong");
 
         streak = 0;
@@ -462,8 +455,9 @@ function submitAnswer() {
 
         castSpell("monster", "hero", true);
 
+        /* === FIXED WRONG ANSWER MESSAGE === */
         document.getElementById("log").innerHTML =
-            `❌ Wrong! Correct answer: <strong>${correct}</strong>`;
+            `❌ Wrong! ${q.a} × ${q.b} = <strong>${correct}</strong>`;
     }
 
     document.getElementById("hero-hp").style.width = heroHP + "%";
