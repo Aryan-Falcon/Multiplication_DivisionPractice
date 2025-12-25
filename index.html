@@ -10,6 +10,7 @@ body {
     font-family: 'Georgia', serif;
     background: radial-gradient(circle at center, #3a0057, #120018);
     color: #f8e7ff;
+    overflow-x: hidden;
 }
 
 h1 {
@@ -29,7 +30,6 @@ h1 {
 }
 
 #rank-bar {
-    position: relative;
     width: 25px;
     height: 300px;
     background: #2a0038;
@@ -39,28 +39,16 @@ h1 {
 }
 
 #rank-fill {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
     height: 0%;
+    width: 100%;
     background: linear-gradient(to top, #ff00ff, #ffb7ff);
-    transition: height 0.4s ease-out;
-}
-
-#rank-labels {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 300px;
+    transition: height 0.4s;
 }
 
 .rank { opacity: 0.3; }
-.rank.active {
-    opacity: 1;
-    text-shadow: 0 0 10px #ff9dff;
-}
+.rank.active { opacity: 1; }
 
-/* ===== BATTLEFIELD ===== */
+/* ===== BATTLE ===== */
 #battlefield {
     margin-top: 40px;
     display: flex;
@@ -71,13 +59,14 @@ h1 {
 .character {
     width: 230px;
     height: 230px;
-    background-size: contain;
+    background-size: contain;     /* prevents cropping */
     background-repeat: no-repeat;
     background-position: center;
 }
 
+/* UPDATED HERO IMAGE */
 #hero {
-    background-image: url("https://i.etsystatic.com/49218806/r/il/141e80/6557512067/il_fullxfull.6557512067_asdh.jpg");
+    background-image: url("https://i.pinimg.com/474x/c0/6e/e4/c06ee4f5b2cecf7f6576343fdf521df1.jpg");
 }
 
 .hp-bar {
@@ -92,48 +81,67 @@ h1 {
     height: 100%;
     background: #ff55ff;
     width: 100%;
-    transition: width 0.5s;
+    transition: width 0.4s;
 }
 
-#timer {
+#timer, #question-box {
     text-align: center;
     font-size: 30px;
-    margin-top: 10px;
-}
-
-#question-box {
-    font-size: 32px;
-    text-align: center;
-    margin-top: 20px;
+    margin-top: 15px;
 }
 
 input {
     font-size: 26px;
     padding: 8px;
     width: 150px;
-    display: block;
     margin: 15px auto;
+    display: block;
     border-radius: 10px;
     border: none;
 }
 
 #feedback {
-    font-size: 36px;
+    font-size: 32px;
     text-align: center;
-    padding: 18px;
-    margin-top: 15px;
     display: none;
-    border-radius: 15px;
 }
 
-.correct {
-    background: rgba(0,255,150,0.15);
-    border: 3px solid #00ff99;
+/* ===== SPELLS ===== */
+.spell {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: fly 0.6s linear forwards;
 }
 
-.wrong {
-    background: rgba(255,0,80,0.15);
-    border: 3px solid #ff3366;
+.arcane { background: radial-gradient(#fff, #c77dff); }
+.fire   { background: radial-gradient(#fff, #ff5500); }
+.grand  { background: radial-gradient(#fff, #00ffff); box-shadow: 0 0 30px cyan; }
+.dark   { background: radial-gradient(#fff, #660000); }
+
+@keyframes fly {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(420px); opacity: 0; }
+}
+
+@keyframes flyBack {
+    from { transform: translateX(0); opacity: 1; }
+    to   { transform: translateX(-420px); opacity: 0; }
+}
+
+.hit { animation: flash 0.3s; }
+@keyframes flash {
+    0% { filter: brightness(3); }
+    100% { filter: brightness(1); }
+}
+
+.shake { animation: shake 0.4s; }
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
 }
 </style>
 </head>
@@ -144,7 +152,7 @@ input {
 
 <div id="rank-panel">
     <div id="rank-bar"><div id="rank-fill"></div></div>
-    <div id="rank-labels">
+    <div>
         <div class="rank" id="r6">Grandmaster</div>
         <div class="rank" id="r5">Archmage</div>
         <div class="rank" id="r4">Mage</div>
@@ -160,10 +168,8 @@ input {
 </div>
 
 <div style="text-align:center">
-    Hero HP
-    <div class="hp-bar"><div id="hero-hp" class="hp-fill"></div></div>
-    Monster HP
-    <div class="hp-bar"><div id="monster-hp" class="hp-fill"></div></div>
+    Hero HP<div class="hp-bar"><div id="hero-hp" class="hp-fill"></div></div>
+    Monster HP<div class="hp-bar"><div id="monster-hp" class="hp-fill"></div></div>
 </div>
 
 <div id="timer">⏳ Time: 16</div>
@@ -172,12 +178,11 @@ input {
 <div id="feedback"></div>
 
 <script>
-let questions = [], current = 0, score = 0, streak = 0, monstersDefeated = 0;
-let heroHP = 100, monsterHP = 60;
-const FIXED_TIME = 16;
-const WRONG_DELAY = 4000;
-let timeLeft, timer;
+let questions=[], current=0, score=0, streak=0, monstersDefeated=0;
+let heroHP=100, monsterHP=60, timer, timeLeft;
+const FIXED_TIME=16;
 
+/* MONSTER IMAGES (1–14) */
 const monsterImages = {
 1:"https://p1.hiclipart.com/preview/549/267/644/monster-rpg-maker-mv-rpg-maker-vx-game-roleplaying-game-slime-slime-morimori-dragon-quest-video-game-development-png-clipart.jpg",
 2:"https://i.pinimg.com/originals/12/74/5e/12745ef0d668ea915bc5cb4a6223e643.jpg",
@@ -188,158 +193,110 @@ const monsterImages = {
 7:"https://i.pinimg.com/474x/76/47/77/7647777b090a764468351b91061db6f4.jpg",
 8:"https://img.freepik.com/free-photo/literary-fantasy-character_23-2151863447.jpg",
 9:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
-10:"https://img.freepik.com/premium-photo/close-up-monster-with-purple-face-purple-body-generative-ai_974533-21727.jpg"
+10:"https://img.freepik.com/premium-photo/close-up-monster-with-purple-face-purple-body-generative-ai_974533-21727.jpg",
+11:"https://s.yimg.com/ny/api/res/1.2/SCj.R_t65SECYWL4Gw8WAQ--/YXBwaWQ9aGlnaGxhbmRlcjt3PTk2MDtoPTU0MA--/https://media.zenfs.com/en/gamesradar_237/ecff60b6a6145d271e2ff32da3526946",
+12:"https://static.wikia.nocookie.net/fairytailfanon/images/5/52/Leviathan2.jpg/revision/latest?cb=20160207110928",
+13:"https://c2.staticflickr.com/6/5611/15565517260_275a4e52fa_b.jpg",
+14:"https://files.d20.io/images/424476265/3P9xMAY1XiVamu9HW3-j2g/original.png?1736707980"
 };
 
-/* Generate questions */
-for (let i = 0; i < 30; i++) {
-    questions.push({
-        a: Math.ceil(Math.random() * 12),
-        b: Math.ceil(Math.random() * 12)
-    });
+/* QUESTIONS */
+for(let i=0;i<40;i++){
+    questions.push({a:Math.ceil(Math.random()*12),b:Math.ceil(Math.random()*12)});
 }
 
-/* Rank update */
-function updateRank() {
-    let accuracy = current === 0 ? 0 : score / current;
-    if (accuracy > 1) accuracy = 1;
-
-    document.getElementById("rank-fill").style.height = (accuracy * 100) + "%";
-
-    let level =
-        accuracy >= 0.999 ? 6 :
-        accuracy >= 0.83  ? 5 :
-        accuracy >= 0.66  ? 4 :
-        accuracy >= 0.5   ? 3 :
-        accuracy >= 0.33  ? 2 : 1;
-
-    for (let i = 1; i <= 6; i++) {
-        document.getElementById("r" + i)
-            .classList.toggle("active", i <= level);
-    }
+function castSpell(type, heroCast=true){
+    let s=document.createElement("div");
+    s.className=`spell ${type}`;
+    document.body.appendChild(s);
+    let from=document.getElementById(heroCast?"hero":"monster").getBoundingClientRect();
+    s.style.left=from.left+120+"px";
+    s.style.top=from.top+100+"px";
+    s.style.animationName=heroCast?"fly":"flyBack";
+    setTimeout(()=>s.remove(),600);
 }
 
-/* Timer */
-function startTimer() {
+function updateRank(){
+    let acc=current?score/current:0;
+    document.getElementById("rank-fill").style.height=(acc*100)+"%";
+    let lvl=acc>=.999?6:acc>=.83?5:acc>=.66?4:acc>=.5?3:acc>=.33?2:1;
+    for(let i=1;i<=6;i++)
+        document.getElementById("r"+i).classList.toggle("active",i<=lvl);
+}
+
+function startTimer(){
     clearInterval(timer);
-    timeLeft = FIXED_TIME;
-    document.getElementById("timer").innerText = `⏳ Time: ${timeLeft}`;
-    timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById("timer").innerText = `⏳ Time: ${timeLeft}`;
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            monsterAttack("⏰ Time's up!");
+    timeLeft=FIXED_TIME;
+    timer=setInterval(()=>{
+        document.getElementById("timer").innerText=`⏳ Time: ${--timeLeft}`;
+        if(timeLeft<=0){ clearInterval(timer); monsterAttack(true); }
+    },1000);
+}
+
+function showQuestion(){
+    let q=questions[current];
+    document.getElementById("question-box").innerText=`${q.a} × ${q.b} = ?`;
+}
+
+function spawnMonster(){
+    monsterHP=60;
+    monster.style.backgroundImage=`url('${monsterImages[monstersDefeated+1]}')`;
+    document.getElementById("monster-hp").style.width="100%";
+}
+
+function monsterAttack(timeout){
+    castSpell("dark",false);
+    heroHP-=timeout?20:10;
+    hero.classList.add("shake");
+    setTimeout(()=>hero.classList.remove("shake"),400);
+    document.getElementById("hero-hp").style.width=heroHP+"%";
+    next();
+}
+
+function submitAnswer(){
+    clearInterval(timer);
+    let q=questions[current];
+    if(Number(answer.value)===q.a*q.b){
+        streak++; score++;
+        let type=streak>=6?"grand":streak>=3?"fire":"arcane";
+        castSpell(type,true);
+        monster.classList.add("hit");
+        setTimeout(()=>monster.classList.remove("hit"),300);
+        monsterHP-=20;
+        document.getElementById("monster-hp").style.width=monsterHP+"%";
+        if(monsterHP<=0){
+            monstersDefeated++;
+            if(monstersDefeated>=14) return endGame();
+            spawnMonster();
         }
-    }, 1000);
-}
-
-/* Advance question safely */
-function advanceQuestion() {
-    current++;
-    updateRank();
-    showQuestion();
-    startTimer();
-}
-
-/* Game flow */
-function spawnMonster() {
-    monsterHP = 60;
-    document.getElementById("monster-hp").style.width = "100%";
-    document.getElementById("monster").style.backgroundImage =
-        `url('${monsterImages[monstersDefeated + 1] || monsterImages[1]}')`;
-}
-
-function showQuestion() {
-    if (monstersDefeated >= 10 || heroHP <= 0) return endGame();
-    let q = questions[current];
-    document.getElementById("question-box").innerText = `${q.a} × ${q.b} = ?`;
-}
-
-function showFeedback(text, type) {
-    let f = document.getElementById("feedback");
-    f.className = type;
-    f.innerHTML = text;
-    f.style.display = "block";
-}
-
-function monsterAttack(reason) {
-    streak = 0;
-    heroHP -= 10 + monstersDefeated * 5;
-    let q = questions[current];
-    showFeedback(`${reason}<br>${q.a} × ${q.b} = ${q.a * q.b}`, "wrong");
-    document.getElementById("hero-hp").style.width = heroHP + "%";
-
-    setTimeout(() => {
-        document.getElementById("feedback").style.display = "none";
-        advanceQuestion();
-    }, WRONG_DELAY);
-}
-
-function submitAnswer() {
-    clearInterval(timer);
-    let q = questions[current];
-    let correct = q.a * q.b;
-
-    if (Number(answer.value) === correct) {
-        streak++;
-        score++;
-        updateRank();
-
-        let dmg = Math.min(10 + streak * 4, 35);
-        monsterHP -= dmg;
-        showFeedback(`✅ Correct!<br>Damage: ${dmg}`, "correct");
-
-        setTimeout(() => {
-            document.getElementById("feedback").style.display = "none";
-
-            if (monsterHP <= 0) {
-                monstersDefeated++;
-                if (monstersDefeated >= 10) return endGame();
-                spawnMonster();
-            }
-
-            document.getElementById("monster-hp").style.width = monsterHP + "%";
-            advanceQuestion();
-        }, 1200);
-
     } else {
-        monsterAttack("❌ Wrong!");
+        streak=0;
+        monsterAttack(false);
+        return;
     }
-
-    answer.value = "";
+    next();
 }
 
-function endGame() {
-    let accuracy = current === 0 ? 0 : score / current;
-    if (accuracy > 1) accuracy = 1;
-
-    let finalRank =
-        accuracy >= 0.999 ? "Grandmaster" :
-        accuracy >= 0.83  ? "Archmage" :
-        accuracy >= 0.66  ? "Mage" :
-        accuracy >= 0.5   ? "Adept" :
-        accuracy >= 0.33  ? "Apprentice" :
-        "Novice";
-
-    document.body.innerHTML = `
-        <h1>Game Over</h1>
-        <p style="text-align:center">Monsters defeated: ${monstersDefeated}</p>
-        <p style="text-align:center">Correct Answers: ${score} / ${current}</p>
-        <p style="text-align:center">Final Rank: ${finalRank}</p>
-        <button onclick="location.reload()">Play Again</button>
-    `;
+function next(){
+    current++; updateRank();
+    if(heroHP<=0) return endGame();
+    showQuestion(); startTimer();
 }
 
-answer.addEventListener("keydown", e => {
-    if (e.key === "Enter") submitAnswer();
-});
+function endGame(){
+    document.body.innerHTML=`<h1>Game Over</h1>
+    <p style="text-align:center">Correct: ${score}/${current}</p>
+    <p style="text-align:center">Monsters Defeated: ${monstersDefeated}</p>
+    <p style="text-align:center">Rank: ${document.querySelector(".rank.active")?.innerText}</p>
+    <button onclick="location.reload()">Play Again</button>`;
+}
 
-/* Start game */
+answer.addEventListener("keydown",e=>e.key==="Enter"&&submitAnswer());
+
+document.getElementById("hero-hp").style.width="100%";
 spawnMonster();
 showQuestion();
 startTimer();
-document.getElementById("hero-hp").style.width = "100%";
 </script>
 
 </body>
