@@ -64,12 +64,12 @@ h1 {
 #battlefield {
     display: flex;
     justify-content: space-between;
-    padding: 80px 140px;
+    padding: 80px 120px;
 }
 
 .entity {
-    width: 180px;
-    height: 180px;
+    width: 240px;
+    height: 240px;
     background-size: contain;
     background-repeat: no-repeat;
     position: relative;
@@ -79,22 +79,26 @@ h1 {
     background-image: url("https://i.pinimg.com/474x/c0/6e/e4/c06ee4f5b2cecf7f6576343fdf521df1.jpg");
 }
 
-#monster {
-    background-size: contain;
-}
-
 .hp-bar {
     position: absolute;
-    top: -16px;
+    top: -22px;
     width: 100%;
-    height: 12px;
+    height: 14px;
     background: #300;
 }
 
-#hero-hp, #monster-hp {
+.hp-fill {
     height: 100%;
     width: 100%;
     background: #f00;
+}
+
+.hp-text {
+    position: absolute;
+    top: -42px;
+    right: 0;
+    font-size: 16px;
+    color: #ffd6ff;
 }
 
 /* ===== UI ===== */
@@ -179,11 +183,12 @@ h1 {
 
 <div id="battlefield">
     <div id="hero" class="entity">
-        <div class="hp-bar"><div id="hero-hp"></div></div>
+        <div class="hp-bar"><div id="hero-hp" class="hp-fill"></div></div>
     </div>
 
     <div id="monster" class="entity">
-        <div class="hp-bar"><div id="monster-hp"></div></div>
+        <div class="hp-bar"><div id="monster-hp" class="hp-fill"></div></div>
+        <div class="hp-text" id="monster-hp-text"></div>
     </div>
 </div>
 
@@ -194,7 +199,7 @@ h1 {
 <script>
 const FIXED_TIME = 20;
 let questions=[], current=0, score=0, streak=0, monstersDefeated=0;
-let heroHP=100, monsterHP=60, timer, timeLeft;
+let heroHP=100, monsterHP=60, maxMonsterHP=60, timer, timeLeft;
 
 const hero = document.getElementById("hero");
 const monster = document.getElementById("monster");
@@ -221,6 +226,30 @@ for(let i=0;i<50;i++){
     questions.push({a:Math.ceil(Math.random()*12),b:Math.ceil(Math.random()*12)});
 }
 
+function spawnMonster(){
+    const index = Math.min(monstersDefeated + 1, 14);
+    maxMonsterHP = 60 + (index - 1) * 15;
+    monsterHP = maxMonsterHP;
+
+    monster.style.backgroundImage = `url('${monsterImages[index]}')`;
+    document.getElementById("monster-hp").style.width="100%";
+    document.getElementById("monster-hp-text").innerText = `${monsterHP} HP`;
+}
+
+function monsterAttack(timeout){
+    const index = Math.min(monstersDefeated + 1, 14);
+    const damage = timeout
+        ? 20 + (index - 1) * 3
+        : 10 + (index - 1) * 2;
+
+    castSpell("dark",false);
+    heroHP -= damage;
+    hero.classList.add("shake");
+    setTimeout(()=>hero.classList.remove("shake"),400);
+    document.getElementById("hero-hp").style.width=heroHP+"%";
+    next();
+}
+
 function castSpell(type, fromHero){
     const s=document.createElement("div");
     s.className=`spell ${type}`;
@@ -229,15 +258,10 @@ function castSpell(type, fromHero){
     const from=(fromHero?hero:monster).getBoundingClientRect();
     const to=(fromHero?monster:hero).getBoundingClientRect();
 
-    const startX=from.left+from.width/2;
-    const startY=from.top+from.height/2;
-    const endX=to.left+to.width/2;
-    const endY=to.top+to.height/2;
-
-    s.style.left=startX+"px";
-    s.style.top=startY+"px";
-    s.style.setProperty("--dx",(endX-startX)+"px");
-    s.style.setProperty("--dy",(endY-startY)+"px");
+    s.style.left=from.left+from.width/2+"px";
+    s.style.top=from.top+from.height/2+"px";
+    s.style.setProperty("--dx",(to.left-from.left)+"px");
+    s.style.setProperty("--dy",(to.top-from.top)+"px");
 
     setTimeout(()=>s.remove(),800);
 }
@@ -265,22 +289,6 @@ function showQuestion(){
     document.getElementById("question-box").innerText=`${q.a} × ${q.b} = ?`;
 }
 
-function spawnMonster(){
-    monsterHP=60;
-    const index = Math.min(monstersDefeated + 1, 14);
-    monster.style.backgroundImage = `url('${monsterImages[index]}')`;
-    document.getElementById("monster-hp").style.width="100%";
-}
-
-function monsterAttack(timeout){
-    castSpell("dark",false);
-    heroHP-=timeout?20:10;
-    hero.classList.add("shake");
-    setTimeout(()=>hero.classList.remove("shake"),400);
-    document.getElementById("hero-hp").style.width=heroHP+"%";
-    next();
-}
-
 function submitAnswer(){
     clearInterval(timer);
     let q=questions[current];
@@ -292,8 +300,11 @@ function submitAnswer(){
         castSpell(streak>=6?"grand":streak>=3?"fire":"arcane",true);
         monster.classList.add("hit");
         setTimeout(()=>monster.classList.remove("hit"),300);
-        monsterHP-=20;
-        document.getElementById("monster-hp").style.width=monsterHP+"%";
+
+        monsterHP -= 20;
+        document.getElementById("monster-hp").style.width=(monsterHP/maxMonsterHP*100)+"%";
+        document.getElementById("monster-hp-text").innerText = `${monsterHP} HP`;
+
         if(monsterHP<=0){
             monstersDefeated++;
             if(monstersDefeated>=14) return endGame();
