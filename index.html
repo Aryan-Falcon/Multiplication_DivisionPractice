@@ -26,24 +26,12 @@ h1 {
     top: 100px;
     left: 20px;
     display: flex;
+    gap: 10px;
     gap: 14px;
 }
 
 #rank-bar {
-    width: 25px;
-    height: 300px;
-    background: #2a0038;
-    border: 2px solid #ff9dff;
-    border-radius: 8px;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-end;
-}
-
-#rank-fill {
-    width: 100%;
-    height: 0%;
-    background: linear-gradient(to top, #ff00ff, #ffb7ff);
+@@ -47,6 +47,13 @@
     transition: height 0.4s ease;
 }
 
@@ -57,67 +45,14 @@ h1 {
 .rank {
     opacity: 0.25;
     transition: opacity 0.3s, text-shadow 0.3s;
-}
-.rank.active {
-    opacity: 1;
-    text-shadow: 0 0 10px #ffb7ff;
-}
-
-/* ===== BATTLE ===== */
-#battlefield {
-    margin-top: 40px;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}
-
-.character {
-    width: 230px;
-    height: 230px;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-#hero {
-    background-image: url("https://i.pinimg.com/474x/c0/6e/e4/c06ee4f5b2cecf7f6576343fdf521df1.jpg");
-}
-
-.hp-bar {
-    width: 60%;
-    height: 22px;
-    background: #3a003a;
-    border: 2px solid #ffb7ff;
-    margin: 10px auto;
-    position: relative;
-}
-
-.hp-fill {
-    height: 100%;
-    background: #ff55ff;
-    width: 100%;
-    transition: width 0.4s;
-}
-
-.hp-text {
-    text-align: center;
-    font-size: 18px;
-}
-
-#timer, #question-box {
-    text-align: center;
-    font-size: 30px;
-    margin-top: 15px;
-}
-
-input {
-    font-size: 26px;
-    padding: 8px;
-    width: 150px;
-    margin: 15px auto;
-    display: block;
-    border-radius: 10px;
+@@ -107,22 +114,15 @@
     border: none;
+}
+
+#feedback {
+    font-size: 32px;
+    text-align: center;
+    display: none;
 }
 
 /* ===== SPELLS ===== */
@@ -127,17 +62,23 @@ input {
     height: 65px;
     border-radius: 50%;
     pointer-events: none;
+    filter: blur(0.3px);
     box-shadow: 0 0 25px currentColor;
+    animation: fly 0.75s cubic-bezier(.4,0,.6,1) forwards;
     animation: fly 0.8s ease-out forwards;
     z-index: 999;
 }
 
-.arcane { background: radial-gradient(circle, #fff, #c77dff); color:#d9a4ff; }
-.fire   { background: radial-gradient(circle, #fff, #ff5500); color:#ff7a2f; }
-.grand  { background: radial-gradient(circle, #fff, #00ffff); color:cyan; box-shadow:0 0 45px cyan; }
+@@ -132,12 +132,10 @@
 .dark   { background: radial-gradient(circle, #fff, #660000); color:#aa0000; }
 
 @keyframes fly {
+    from { transform: translate(0,0) scale(1); opacity: 1; }
+    to   { transform: translate(420px,-60px) scale(0.6); opacity: 0; }
+}
+@keyframes flyBack {
+    from { transform: translate(0,0) scale(1); opacity: 1; }
+    to   { transform: translate(-420px,-60px) scale(0.6); opacity: 0; }
     to {
         transform: translate(var(--dx), var(--dy)) scale(0.6);
         opacity: 0;
@@ -145,109 +86,39 @@ input {
 }
 
 .hit { animation: flash 0.3s; }
-@keyframes flash {
-    0% { filter: brightness(3); }
-    100% { filter: brightness(1); }
-}
-
-.shake { animation: shake 0.4s; }
-@keyframes shake {
-    0%,100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-}
-</style>
-</head>
-
-<body>
-
-<h1>⚔️ Multiplication RPG: Arcane Tower ⚔️</h1>
+@@ -161,7 +159,7 @@
 
 <div id="rank-panel">
     <div id="rank-bar"><div id="rank-fill"></div></div>
+    <div>
     <div id="rank-labels">
         <div class="rank" id="r6">Grandmaster</div>
         <div class="rank" id="r5">Archmage</div>
         <div class="rank" id="r4">Mage</div>
-        <div class="rank" id="r3">Adept</div>
-        <div class="rank" id="r2">Apprentice</div>
-        <div class="rank" id="r1">Novice</div>
-    </div>
-</div>
-
-<div id="battlefield">
-    <div id="hero" class="character"></div>
-    <div id="monster" class="character"></div>
-</div>
-
-<div style="text-align:center">
-    Hero HP
-    <div class="hp-bar"><div id="hero-hp" class="hp-fill"></div></div>
-    <div id="hero-hp-text" class="hp-text"></div>
-
-    Monster HP
-    <div class="hp-bar"><div id="monster-hp" class="hp-fill"></div></div>
-    <div id="monster-hp-text" class="hp-text"></div>
-</div>
-
+@@ -184,12 +182,11 @@
 <div id="timer">⏳ Time: 20</div>
 <div id="question-box"></div>
 <input id="answer" type="number" placeholder="ENTER">
+<div id="feedback"></div>
 
 <script>
-let questions = [];
-let current = 0, score = 0, streak = 0, monstersDefeated = 0;
-
-let heroHP = 100, heroMaxHP = 100;
-let monsterHP = 60, monsterMaxHP = 60;
-
-let timer, timeLeft;
+let questions=[], current=0, score=0, streak=0, monstersDefeated=0;
+let heroHP=100, monsterHP=60, timer, timeLeft;
+const FIXED_TIME = 20; // ⏳ UPDATED TIMER
 const FIXED_TIME = 20;
-const TOTAL_MONSTERS = 14;
 
 const monsterImages = {
 1:"https://p1.hiclipart.com/preview/549/267/644/monster-rpg-maker-mv-rpg-maker-vx-game-roleplaying-game-slime-slime-morimori-dragon-quest-video-game-development-png-clipart.jpg",
-2:"https://i.pinimg.com/originals/12/74/5e/12745ef0d668ea915bc5cb4a6223e643.jpg",
-3:"https://i.pinimg.com/564x/bc/92/9a/bc929acfd5d867c805c06dbe8b05855c.jpg",
-4:"https://koboldpress.com/wp-content/uploads/2013/02/ghost_goblin_by_chrismcfann.jpg",
-5:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
-6:"https://static.wikia.nocookie.net/rpgtalk/images/e/e0/IronGolemDNDB.jpeg",
-7:"https://i.pinimg.com/474x/76/47/77/7647777b090a764468351b91061db6f4.jpg",
-8:"https://img.freepik.com/free-photo/literary-fantasy-character_23-2151863447.jpg",
-9:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
-10:"https://img.freepik.com/premium-photo/close-up-monster-with-purple-face-purple-body-generative-ai_974533-21727.jpg",
-11:"https://media.zenfs.com/en/gamesradar_237/ecff60b6a6145d271e2ff32da3526946",
-12:"https://static.wikia.nocookie.net/fairytailfanon/images/5/52/Leviathan2.jpg",
-13:"https://c2.staticflickr.com/6/5611/15565517260_275a4e52fa_b.jpg",
-14:"https://files.d20.io/images/424476265/3P9xMAY1XiVamu9HW3-j2g/original.png"
-};
-
-function generateQuestion(){
-    return { a: Math.ceil(Math.random()*12), b: Math.ceil(Math.random()*12) };
-}
-
-function getQuestion(){
-    if(!questions[current]) questions.push(generateQuestion());
-    return questions[current];
-}
-
-function updateHP(){
-    heroHP = Math.max(heroHP, 0);
-    monsterHP = Math.max(monsterHP, 0);
-
-    hero-hp.style.width = (heroHP/heroMaxHP*100)+"%";
-    monster-hp.style.width = (monsterHP/monsterMaxHP*100)+"%";
-
-    hero-hp-text.innerText = `${heroHP} / ${heroMaxHP}`;
-    monster-hp-text.innerText = `${monsterHP} / ${monsterMaxHP}`;
-}
-
-function castSpell(type, heroCast=true){
+@@ -215,98 +212,108 @@
     let s=document.createElement("div");
     s.className=`spell ${type}`;
     document.body.appendChild(s);
 
     let from=document.getElementById(heroCast?"hero":"monster").getBoundingClientRect();
+    s.style.left=from.left+120+"px";
+    s.style.top=from.top+80+"px";
+    s.style.animationName=heroCast?"fly":"flyBack";
+    setTimeout(()=>s.remove(),750);
     let to=document.getElementById(heroCast?"monster":"hero").getBoundingClientRect();
 
     let startX = from.left + from.width/2;
@@ -265,7 +136,7 @@ function castSpell(type, heroCast=true){
 
 function updateRank(){
     let acc=current?score/current:0;
-    rank-fill.style.height=Math.min(acc*100,100)+"%";
+    document.getElementById("rank-fill").style.height=Math.min(acc*100,100)+"%";
     let lvl=acc===1?6:acc>=.85?5:acc>=.7?4:acc>=.55?3:acc>=.35?2:1;
     for(let i=1;i<=6;i++)
         document.getElementById("r"+i).classList.toggle("active",i<=lvl);
@@ -274,50 +145,49 @@ function updateRank(){
 function startTimer(){
     clearInterval(timer);
     timeLeft=FIXED_TIME;
+    document.getElementById("timer").innerText=`⏳ Time: ${timeLeft}`;
     timer=setInterval(()=>{
-        timer.innerText=`⏳ Time: ${--timeLeft}`;
+        document.getElementById("timer").innerText=`⏳ Time: ${--timeLeft}`;
         if(timeLeft<=0){ clearInterval(timer); monsterAttack(true); }
     },1000);
 }
 
 function showQuestion(){
-    let q=getQuestion();
-    question-box.innerText=`${q.a} × ${q.b} = ?`;
+    let q=questions[current];
+    document.getElementById("question-box").innerText=`${q.a} × ${q.b} = ?`;
 }
 
 function spawnMonster(){
-    monsterMaxHP = 60 + monstersDefeated * 12;
-    monsterHP = monsterMaxHP;
+    monsterHP=60;
     monster.style.backgroundImage=`url('${monsterImages[monstersDefeated+1]}')`;
-    updateHP();
+    document.getElementById("monster-hp").style.width="100%";
 }
 
 function monsterAttack(timeout){
     castSpell("dark",false);
-    heroHP -= timeout ? 20 : 10;
+    heroHP-=timeout?20:10;
     hero.classList.add("shake");
     setTimeout(()=>hero.classList.remove("shake"),400);
-    updateHP();
+    document.getElementById("hero-hp").style.width=heroHP+"%";
     next();
 }
 
 function submitAnswer(){
     clearInterval(timer);
-    let q=getQuestion();
+    let q=questions[current];
     let val=Number(answer.value);
     answer.value="";
 
     if(val===q.a*q.b){
         streak++; score++;
         castSpell(streak>=6?"grand":streak>=3?"fire":"arcane",true);
-
-        let bonus=Math.min(streak*5,20);
-        monsterHP -= (20 + bonus);
-        updateHP();
-
+        monster.classList.add("hit");
+        setTimeout(()=>monster.classList.remove("hit"),300);
+        monsterHP-=20;
+        document.getElementById("monster-hp").style.width=monsterHP+"%";
         if(monsterHP<=0){
             monstersDefeated++;
-            if(monstersDefeated>=TOTAL_MONSTERS) return endGame();
+            if(monstersDefeated>=14) return endGame();
             spawnMonster();
         }
     } else {
@@ -344,10 +214,10 @@ function endGame(){
 
 answer.addEventListener("keydown",e=>e.key==="Enter"&&submitAnswer());
 
+document.getElementById("hero-hp").style.width="100%";
 spawnMonster();
 showQuestion();
 startTimer();
-updateHP();
 </script>
 
 </body>
