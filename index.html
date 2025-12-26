@@ -20,6 +20,18 @@ h1 {
     text-shadow: 0 0 15px #ff6cff;
 }
 
+/* ===== RANK PANEL ===== */
+#rank-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0,0,0,0.45);
+    padding: 12px 18px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px #a000ff;
+    font-size: 18px;
+}
+
 /* ===== BATTLEFIELD ===== */
 #battlefield {
     display: flex;
@@ -108,6 +120,11 @@ h1 {
 
 <h1>Arcane Tower</h1>
 
+<div id="rank-panel">
+    🏅 Rank: <span id="rank">Novice</span><br>
+    👾 Monsters Defeated: <span id="defeated">0</span>/14
+</div>
+
 <div id="battlefield">
     <div id="hero" class="entity">
         <div class="hp-bar"><div id="hero-hp" class="hp-fill"></div></div>
@@ -129,29 +146,37 @@ let questions=[], current=0, score=0, streak=0, monstersDefeated=0;
 let heroHP=100, monsterHP=60, maxMonsterHP=60, timer, timeLeft;
 let gameOver=false;
 
+const ranks=["Novice","Apprentice","Adept","Mage","Archmage","Legend"];
+
 const hero=document.getElementById("hero");
 const monster=document.getElementById("monster");
 const answer=document.getElementById("answer");
 
-const monsterImages={
-  1:"https://p1.hiclipart.com/preview/549/267/644/monster-rpg-maker-mv-rpg-maker-vx-game-roleplaying-game-slime-slime-morimori-dragon-quest-video-game-development-png-clipart.jpg",
-  2:"https://i.pinimg.com/originals/12/74/5e/12745ef0d668ea915bc5cb4a6223e643.jpg",
-  3:"https://i.pinimg.com/564x/bc/92/9a/bc929acfd5d867c805c06dbe8b05855c.jpg",
-  4:"https://koboldpress.com/wp-content/uploads/2013/02/ghost_goblin_by_chrismcfann.jpg",
-  5:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
-  6:"https://static.wikia.nocookie.net/rpgtalk/images/e/e0/IronGolemDNDB.jpeg",
-  7:"https://i.pinimg.com/474x/76/47/77/7647777b090a764468351b91061db6f4.jpg",
-  8:"https://img.freepik.com/free-photo/literary-fantasy-character_23-2151863447.jpg",
-  9:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
-  10:"https://img.freepik.com/premium-photo/close-up-monster-with-purple-face-purple-body-generative-ai_974533-21727.jpg",
-  11:"https://media.zenfs.com/en/gamesradar_237/ecff60b6a6145d271e2ff32da3526946",
-  12:"https://static.wikia.nocookie.net/fairytailfanon/images/5/52/Leviathan2.jpg",
-  13:"https://c2.staticflickr.com/6/5611/15565517260_275a4e52fa_b.jpg",
-  14:"https://files.d20.io/images/424476265/3P9xMAY1XiVamu9HW3-j2g/original.png"
+const monsterImages={ /* unchanged */ 
+1:"https://p1.hiclipart.com/preview/549/267/644/monster-rpg-maker-mv-rpg-maker-vx-game-roleplaying-game-slime-slime-morimori-dragon-quest-video-game-development-png-clipart.jpg",
+2:"https://i.pinimg.com/originals/12/74/5e/12745ef0d668ea915bc5cb4a6223e643.jpg",
+3:"https://i.pinimg.com/564x/bc/92/9a/bc929acfd5d867c805c06dbe8b05855c.jpg",
+4:"https://koboldpress.com/wp-content/uploads/2013/02/ghost_goblin_by_chrismcfann.jpg",
+5:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
+6:"https://static.wikia.nocookie.net/rpgtalk/images/e/e0/IronGolemDNDB.jpeg",
+7:"https://i.pinimg.com/474x/76/47/77/7647777b090a764468351b91061db6f4.jpg",
+8:"https://img.freepik.com/free-photo/literary-fantasy-character_23-2151863447.jpg",
+9:"https://i.pinimg.com/474x/c8/51/9c/c8519ce4a412892d327c7671c1f30bc3.jpg",
+10:"https://img.freepik.com/premium-photo/close-up-monster-with-purple-face-purple-body-generative-ai_974533-21727.jpg",
+11:"https://media.zenfs.com/en/gamesradar_237/ecff60b6a6145d271e2ff32da3526946",
+12:"https://static.wikia.nocookie.net/fairytailfanon/images/5/52/Leviathan2.jpg",
+13:"https://c2.staticflickr.com/6/5611/15565517260_275a4e52fa_b.jpg",
+14:"https://files.d20.io/images/424476265/3P9xMAY1XiVamu9HW3-j2g/original.png"
 };
 
 for(let i=0;i<50;i++)
   questions.push({a:Math.ceil(Math.random()*12),b:Math.ceil(Math.random()*12)});
+
+function updateRank(){
+    document.getElementById("defeated").innerText=monstersDefeated;
+    document.getElementById("rank").innerText=
+        ranks[Math.min(Math.floor(monstersDefeated/3),ranks.length-1)];
+}
 
 function spawnMonster(){
     const index=monstersDefeated+1;
@@ -159,6 +184,7 @@ function spawnMonster(){
     monsterHP=maxMonsterHP;
     monster.style.backgroundImage=`url('${monsterImages[index]}')`;
     updateMonsterHP();
+    updateRank();
 }
 
 function updateMonsterHP(){
@@ -188,7 +214,7 @@ function submitAnswer(){
     if(val===q.a*q.b){
         streak++; score++;
 
-        const damage = 20 + Math.min(streak * 5, 40); // ⭐ STREAK DAMAGE
+        const damage = 20 + Math.min(streak * 5, 40); // ⭐ streak bonus
         monsterHP -= damage;
         updateMonsterHP();
 
