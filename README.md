@@ -1,1 +1,1 @@
-A multiplication and division practice game created with the help of chatGPT
+A multiplication and division practice game created with the help of AI
