@@ -220,8 +220,28 @@ function spawnSpell(type){
 function showQuestion(){
     const a = Math.ceil(Math.random()*12);
     const b = Math.ceil(Math.random()*12);
-    currentQuestion = {a,b};
-    document.getElementById("question-box").innerText = `${a} × ${b} = ?`;
+    const product = a * b;
+
+    if (Math.random() < 0.5) {
+        currentQuestion = {
+            text: `${a} × ${b} = ?`,
+            answer: product
+        };
+    } else {
+        if (Math.random() < 0.5) {
+            currentQuestion = {
+                text: `${product} ÷ ${a} = ?`,
+                answer: b
+            };
+        } else {
+            currentQuestion = {
+                text: `${product} ÷ ${b} = ?`,
+                answer: a
+            };
+        }
+    }
+
+    document.getElementById("question-box").innerText = currentQuestion.text;
 }
 
 function spawnMonster(){
@@ -248,7 +268,7 @@ function submitAnswer(){
     const val = Number(answer.value);
     answer.value = "";
 
-    if(val === currentQuestion.a * currentQuestion.b){
+    if(val === currentQuestion.answer){
         streak++; score++;
         const damage = 20 + Math.min(streak*5, 40);
         monsterHP -= damage;
