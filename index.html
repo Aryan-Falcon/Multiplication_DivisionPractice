@@ -146,14 +146,14 @@ h1{
 </div>
 
 <div id="ui">
-    <div id="timer">⏳ Time: 20</div>
+    <div id="timer">⏳ Time: 15</div>
     <div id="question-box"></div>
     <input id="answer" type="number" placeholder="ENTER">
     <div id="feedback-box"></div>
 </div>
 
 <script>
-const FIXED_TIME=20;
+const FIXED_TIME=15;
 let score=0,attempts=0,streak=0;
 let monstersDefeated=0;
 let heroHP=100;
@@ -260,7 +260,7 @@ function submitAnswer(){
 
 function monsterAttack(timeout){
     spawnSpell("dark");
-    heroHP=Math.max(heroHP-(timeout?20:10+monstersDefeated*2),0);
+    heroHP=Math.max(heroHP-(timeout?15:10+monstersDefeated*2),0);
     updateHeroHP();
     hero.classList.add("shake");
     setTimeout(()=>hero.classList.remove("shake"),400);
